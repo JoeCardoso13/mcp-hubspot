@@ -1,4 +1,4 @@
-"""Unit tests for the Example API client."""
+"""Unit tests for the HubSpot API client."""
 
 import os
 from unittest.mock import AsyncMock, patch
@@ -6,13 +6,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 import pytest_asyncio
 
-from mcp_example.api_client import ExampleAPIError, ExampleClient
+from mcp_hubspot.api_client import HubspotAPIError, HubspotClient
+from mcp_hubspot.api_models import CrmListResponse, CrmObject
 
 
 @pytest_asyncio.fixture
 async def mock_client():
-    """Create an ExampleClient with mocked session."""
-    client = ExampleClient(api_key="test_key")
+    """Create a HubspotClient with mocked session."""
+    client = HubspotClient(api_key="test_key")
     client._session = AsyncMock()
     yield client
     await client.close()
@@ -22,57 +23,140 @@ class TestClientInitialization:
     """Test client creation and configuration."""
 
     def test_init_with_explicit_key(self):
-        """Client accepts an explicit API key."""
-        client = ExampleClient(api_key="explicit_key")
+        client = HubspotClient(api_key="explicit_key")
         assert client.api_key == "explicit_key"
 
     def test_init_with_env_var(self):
-        """Client falls back to EXAMPLE_API_KEY env var."""
-        os.environ["EXAMPLE_API_KEY"] = "env_key"
+        os.environ["HUBSPOT_API_KEY"] = "env_key"
         try:
-            client = ExampleClient()
+            client = HubspotClient()
             assert client.api_key == "env_key"
         finally:
-            del os.environ["EXAMPLE_API_KEY"]
+            del os.environ["HUBSPOT_API_KEY"]
 
     def test_init_without_key_raises(self):
-        """Client raises ValueError when no key is available."""
         with patch.dict(os.environ, {}, clear=True):
-            os.environ.pop("EXAMPLE_API_KEY", None)
-            with pytest.raises(ValueError, match="EXAMPLE_API_KEY is required"):
-                ExampleClient()
+            os.environ.pop("HUBSPOT_API_KEY", None)
+            with pytest.raises(ValueError, match="HUBSPOT_API_KEY is required"):
+                HubspotClient()
 
     def test_custom_timeout(self):
-        """Client accepts a custom timeout."""
-        client = ExampleClient(api_key="key", timeout=60.0)
+        client = HubspotClient(api_key="key", timeout=60.0)
         assert client.timeout == 60.0
+
+    def test_base_url(self):
+        assert HubspotClient.BASE_URL == "https://api.hubapi.com"
 
     @pytest.mark.asyncio
     async def test_context_manager(self):
-        """Client works as an async context manager."""
-        async with ExampleClient(api_key="test") as client:
+        async with HubspotClient(api_key="test") as client:
             assert client._session is not None
         assert client._session is None
 
 
-class TestClientMethods:
-    """Test API client methods with mocked responses."""
+class TestContactMethods:
+    """Test contact API methods."""
 
     @pytest.mark.asyncio
-    async def test_list_items(self, mock_client):
-        """Test list items endpoint."""
-        mock_response = {"items": [{"id": "1", "name": "Item 1"}, {"id": "2", "name": "Item 2"}]}
+    async def test_list_contacts(self, mock_client):
+        mock_response = {
+            "results": [{"id": "1", "properties": {"email": "a@b.com"}}],
+            "paging": {"next": {"after": "2"}},
+        }
         with patch.object(mock_client, "_request", return_value=mock_response):
-            result = await mock_client.list_items(limit=10)
-        assert len(result) == 2
+            result = await mock_client.list_contacts(limit=10)
+        assert isinstance(result, CrmListResponse)
+        assert len(result.results) == 1
 
     @pytest.mark.asyncio
-    async def test_get_item(self, mock_client):
-        """Test get item endpoint."""
-        mock_response = {"id": "1", "name": "Item 1", "description": "Test"}
+    async def test_list_contacts_with_properties(self, mock_client):
+        mock_response = {"results": [], "paging": None}
+        with patch.object(mock_client, "_request", return_value=mock_response) as mock_req:
+            await mock_client.list_contacts(properties=["email", "firstname"])
+        call_args = mock_req.call_args
+        assert "email,firstname" in str(call_args)
+
+    @pytest.mark.asyncio
+    async def test_get_contact(self, mock_client):
+        mock_response = {"id": "1", "properties": {"email": "a@b.com"}}
         with patch.object(mock_client, "_request", return_value=mock_response):
-            result = await mock_client.get_item("1")
-        assert result["id"] == "1"
+            result = await mock_client.get_contact("1")
+        assert isinstance(result, CrmObject)
+        assert result.id == "1"
+
+    @pytest.mark.asyncio
+    async def test_get_contact_by_email(self, mock_client):
+        mock_response = {"id": "1", "properties": {"email": "a@b.com"}}
+        with patch.object(mock_client, "_request", return_value=mock_response) as mock_req:
+            await mock_client.get_contact("a@b.com", id_property="email")
+        call_args = mock_req.call_args
+        assert "idProperty" in str(call_args)
+
+    @pytest.mark.asyncio
+    async def test_create_contact(self, mock_client):
+        mock_response = {"id": "2", "properties": {"email": "new@b.com"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.create_contact({"email": "new@b.com"})
+        assert isinstance(result, CrmObject)
+        assert result.id == "2"
+
+    @pytest.mark.asyncio
+    async def test_update_contact(self, mock_client):
+        mock_response = {"id": "1", "properties": {"phone": "555-1234"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.update_contact("1", {"phone": "555-1234"})
+        assert isinstance(result, CrmObject)
+
+
+class TestCompanyMethods:
+    """Test company API methods."""
+
+    @pytest.mark.asyncio
+    async def test_list_companies(self, mock_client):
+        mock_response = {"results": [{"id": "1", "properties": {"name": "Acme"}}]}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.list_companies()
+        assert isinstance(result, CrmListResponse)
+        assert len(result.results) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_company(self, mock_client):
+        mock_response = {"id": "1", "properties": {"name": "Acme"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.get_company("1")
+        assert isinstance(result, CrmObject)
+
+    @pytest.mark.asyncio
+    async def test_create_company(self, mock_client):
+        mock_response = {"id": "2", "properties": {"name": "NewCo"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.create_company({"name": "NewCo"})
+        assert isinstance(result, CrmObject)
+
+    @pytest.mark.asyncio
+    async def test_update_company(self, mock_client):
+        mock_response = {"id": "1", "properties": {"industry": "Tech"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.update_company("1", {"industry": "Tech"})
+        assert isinstance(result, CrmObject)
+
+
+class TestDealMethods:
+    """Test deal API methods."""
+
+    @pytest.mark.asyncio
+    async def test_list_deals(self, mock_client):
+        mock_response = {"results": [{"id": "1", "properties": {"dealname": "Big"}}]}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.list_deals()
+        assert isinstance(result, CrmListResponse)
+
+    @pytest.mark.asyncio
+    async def test_create_deal(self, mock_client):
+        mock_response = {"id": "2", "properties": {"dealname": "New Deal"}}
+        with patch.object(mock_client, "_request", return_value=mock_response):
+            result = await mock_client.create_deal({"dealname": "New Deal", "dealstage": "new"})
+        assert isinstance(result, CrmObject)
 
 
 class TestErrorHandling:
@@ -80,44 +164,36 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_401_unauthorized(self, mock_client):
-        """Test handling of unauthorized errors."""
         with patch.object(
-            mock_client,
-            "_request",
-            side_effect=ExampleAPIError(401, "Invalid API key"),
+            mock_client, "_request", side_effect=HubspotAPIError(401, "Invalid API key")
         ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
+            with pytest.raises(HubspotAPIError) as exc_info:
+                await mock_client.list_contacts()
             assert exc_info.value.status == 401
 
     @pytest.mark.asyncio
     async def test_429_rate_limit(self, mock_client):
-        """Test handling of rate limit errors."""
         with patch.object(
-            mock_client,
-            "_request",
-            side_effect=ExampleAPIError(429, "Rate limit exceeded"),
+            mock_client, "_request", side_effect=HubspotAPIError(429, "Rate limit exceeded")
         ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
+            with pytest.raises(HubspotAPIError) as exc_info:
+                await mock_client.list_contacts()
             assert exc_info.value.status == 429
 
     @pytest.mark.asyncio
     async def test_network_error(self, mock_client):
-        """Test handling of network errors."""
         with patch.object(
             mock_client,
             "_request",
-            side_effect=ExampleAPIError(500, "Network error: Connection failed"),
+            side_effect=HubspotAPIError(500, "Network error: Connection failed"),
         ):
-            with pytest.raises(ExampleAPIError) as exc_info:
-                await mock_client.list_items()
+            with pytest.raises(HubspotAPIError) as exc_info:
+                await mock_client.list_contacts()
             assert exc_info.value.status == 500
             assert "Network error" in exc_info.value.message
 
     def test_error_string_representation(self):
-        """Test error string format."""
-        err = ExampleAPIError(401, "Unauthorized", {"id": "auth_error"})
+        err = HubspotAPIError(401, "Unauthorized", {"id": "auth_error"})
         assert "401" in str(err)
         assert "Unauthorized" in str(err)
         assert err.details == {"id": "auth_error"}

@@ -1,28 +1,52 @@
 {
   "manifest_version": "0.4",
-  "name": "@nimblebraininc/example",
+  "name": "@joecardoso13/hubspot",
   "version": "0.1.0",
-  "description": "MCP server for the Example API",
+  "description": "MCP server for the HubSpot CRM API — manage contacts, companies, and deals",
   "author": {
-    "name": "NimbleBrain Inc"
+    "name": "Joe Cardoso"
   },
   "user_config": {
     "api_key": {
       "type": "string",
-      "title": "Example API Key",
-      "description": "Your API key from https://example.com/settings/api",
+      "title": "HubSpot API Key",
+      "description": "Your HubSpot private app access token from https://app.hubspot.com/private-apps/",
       "sensitive": true,
       "required": true
     }
   },
   "server": {
     "type": "python",
-    "entry_point": "mcp_example.server",
+    "entry_point": "mcp_hubspot.server",
     "mcp_config": {
       "command": "python",
-      "args": ["-m", "mcp_example.server"],
+      "args": ["-m", "mcp_hubspot.server"],
       "env": {
-        "EXAMPLE_API_KEY": "${user_config.api_key}"
+        "HUBSPOT_API_KEY": "${user_config.api_key}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "list_contacts", "description": "List contacts from HubSpot CRM" },
+    { "name": "get_contact", "description": "Get a contact by ID or email" },
+    { "name": "create_contact", "description": "Create a new contact" },
+    { "name": "update_contact", "description": "Update a contact's properties" },
+    { "name": "list_companies", "description": "List companies from HubSpot CRM" },
+    { "name": "get_company", "description": "Get a company by ID" },
+    { "name": "create_company", "description": "Create a new company" },
+    { "name": "update_company", "description": "Update a company's properties" },
+    { "name": "list_deals", "description": "List deals from HubSpot CRM" },
+    { "name": "create_deal", "description": "Create a new deal" }
+  ],
+  "_meta": {
+    "org.mpaktrust": {
+      "mtf_version": "0.1",
+      "permissions": {
+        "network": "outbound",
+        "filesystem": "none",
+        "subprocess": "none",
+        "environment": "read",
+        "native": "none"
       }
     }
   }

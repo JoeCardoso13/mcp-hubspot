@@ -1,65 +1,71 @@
-"""Tests for Example API models."""
+"""Tests for HubSpot API models."""
 
-from mcp_example.api_models import Item, ItemListResponse, Pagination
+from mcp_hubspot.api_models import CrmListResponse, CrmObject, Paging, PagingResponse
 
 
-def test_item_model() -> None:
-    """Test Item model parsing from API response."""
+def test_crm_object_full() -> None:
+    """Test CrmObject with all fields."""
     data = {
-        "id": "item_123",
-        "name": "Test Item",
-        "description": "A test item",
+        "id": "123",
+        "properties": {"email": "test@example.com", "firstname": "Jane"},
         "createdAt": "2026-01-01T00:00:00Z",
         "updatedAt": "2026-01-02T00:00:00Z",
-        "metadata": {"key": "value"},
+        "archived": False,
     }
-    item = Item(**data)
-    assert item.id == "item_123"
-    assert item.name == "Test Item"
-    assert item.created_at == "2026-01-01T00:00:00Z"
-    assert item.metadata == {"key": "value"}
+    obj = CrmObject(**data)
+    assert obj.id == "123"
+    assert obj.properties["email"] == "test@example.com"
+    assert obj.created_at == "2026-01-01T00:00:00Z"
+    assert obj.archived is False
 
 
-def test_item_model_minimal() -> None:
-    """Test Item model with only required fields."""
-    item = Item(id="item_456")
-    assert item.id == "item_456"
-    assert item.name is None
-    assert item.metadata == {}
+def test_crm_object_minimal() -> None:
+    """Test CrmObject with only required fields."""
+    obj = CrmObject(id="456")
+    assert obj.id == "456"
+    assert obj.properties == {}
+    assert obj.created_at is None
+    assert obj.archived is False
 
 
-def test_pagination_model() -> None:
-    """Test Pagination model."""
-    data = {"nextCursor": "abc123", "hasMore": True}
-    pagination = Pagination(**data)
-    assert pagination.next_cursor == "abc123"
-    assert pagination.has_more is True
+def test_paging() -> None:
+    """Test Paging model."""
+    paging = Paging(after="abc123")
+    assert paging.after == "abc123"
 
 
-def test_pagination_defaults() -> None:
-    """Test Pagination model defaults."""
-    pagination = Pagination()
-    assert pagination.next_cursor is None
-    assert pagination.has_more is False
+def test_paging_response() -> None:
+    """Test PagingResponse model."""
+    resp = PagingResponse(next=Paging(after="next_cursor"))
+    assert resp.next is not None
+    assert resp.next.after == "next_cursor"
 
 
-def test_item_list_response() -> None:
-    """Test ItemListResponse model."""
+def test_paging_response_none() -> None:
+    """Test PagingResponse with no next page."""
+    resp = PagingResponse()
+    assert resp.next is None
+
+
+def test_crm_list_response() -> None:
+    """Test CrmListResponse with results and paging."""
     data = {
-        "items": [
-            {"id": "1", "name": "First"},
-            {"id": "2", "name": "Second"},
+        "results": [
+            {"id": "1", "properties": {"name": "First"}},
+            {"id": "2", "properties": {"name": "Second"}},
         ],
-        "pagination": {"nextCursor": "next", "hasMore": True},
+        "paging": {"next": {"after": "3"}},
     }
-    response = ItemListResponse(**data)
-    assert len(response.items) == 2
-    assert response.items[0].id == "1"
-    assert response.pagination.has_more is True
+    response = CrmListResponse(**data)
+    assert len(response.results) == 2
+    assert response.results[0].id == "1"
+    assert response.paging is not None
+    assert response.paging.next is not None
+    assert response.paging.next.after == "3"
 
 
-def test_item_list_response_empty() -> None:
-    """Test ItemListResponse with empty results."""
-    response = ItemListResponse()
-    assert response.items == []
-    assert response.pagination.has_more is False
+def test_crm_list_response_empty() -> None:
+    """Test CrmListResponse with no results."""
+    response = CrmListResponse()
+    assert response.results == []
+    assert response.paging is None

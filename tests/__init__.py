@@ -1,1 +1,1 @@
-"""Tests for Example MCP Server."""
+"""Tests for HubSpot MCP Server."""
