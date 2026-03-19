@@ -3,7 +3,7 @@
   "name": "io.joecardoso13/hubspot",
   "title": "HubSpot",
   "description": "MCP server for the HubSpot CRM API — manage contacts, companies, and deals",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "websiteUrl": "https://github.com/JoeCardoso13",
   "repository": {
     "url": "https://github.com/JoeCardoso13/mcp-hubspot",
@@ -18,10 +18,12 @@
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-hubspot",
       "version": "0.1.0",
-      "transport": { "type": "stdio" },
+      "transport": {
+        "type": "stdio"
+      },
       "environmentVariables": [
         {
-          "name": "HUBSPOT_API_KEY",
+          "name": "HUBSPOT_ACCESS_TOKEN",
           "description": "HubSpot private app access token",
           "isRequired": true,
           "isSecret": true
@@ -37,7 +39,9 @@
     "org.mpaktrust": {
       "mtf_version": "0.1",
       "permissions": {
-        "network": ["api.hubapi.com"],
+        "network": [
+          "api.hubapi.com"
+        ],
         "filesystem": "none",
         "subprocess": "none"
       }

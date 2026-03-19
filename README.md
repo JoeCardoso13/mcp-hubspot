@@ -14,7 +14,7 @@ An MCP (Model Context Protocol) server that provides access to the HubSpot API, 
 
 ```bash
 # Configure your API key
-mpak config set @JoeCardoso13/hubspot api_key=your_api_key_here
+mpak config set @JoeCardoso13/hubspot access_token=your_access_token_here
 
 # Run the server
 mpak run @JoeCardoso13/hubspot
@@ -30,8 +30,8 @@ cd mcp-hubspot
 # Install dependencies with uv
 uv sync
 
-# Set your API key
-export HUBSPOT_API_KEY=your_api_key_here
+# Set your access token (from a HubSpot Private App)
+export HUBSPOT_ACCESS_TOKEN=your_access_token_here
 
 # Run the server
 uv run python -m mcp_hubspot.server
@@ -39,11 +39,18 @@ uv run python -m mcp_hubspot.server
 
 ## Configuration
 
-### Getting Your API Key
+### Getting Your Access Token
 
-1. Go to https://example.com/settings/api
-2. Create a new API key
-3. Copy the key
+This server authenticates via a **HubSpot Private App** access token:
+
+1. In HubSpot, go to **Development > Legacy apps > Create legacy app > Private**
+2. Name it (e.g. "MCP Server") and go to the **Scopes** tab
+3. Add the following scopes:
+   - `crm.objects.contacts.read` / `crm.objects.contacts.write`
+   - `crm.objects.companies.read` / `crm.objects.companies.write`
+   - `crm.objects.deals.read` / `crm.objects.deals.write`
+4. Create the app, then go to the **Auth** tab and click **Show token**
+5. Copy the token and set it as `HUBSPOT_ACCESS_TOKEN`
 
 ### Claude Desktop Configuration
 

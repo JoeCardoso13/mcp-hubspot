@@ -1,15 +1,15 @@
 {
   "manifest_version": "0.4",
   "name": "@joecardoso13/hubspot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for the HubSpot CRM API — manage contacts, companies, and deals",
   "author": {
     "name": "Joe Cardoso"
   },
   "user_config": {
-    "api_key": {
+    "access_token": {
       "type": "string",
-      "title": "HubSpot API Key",
+      "title": "HubSpot Access Token",
       "description": "Your HubSpot private app access token from https://app.hubspot.com/private-apps/",
       "sensitive": true,
       "required": true
@@ -20,23 +20,56 @@
     "entry_point": "mcp_hubspot.server",
     "mcp_config": {
       "command": "python",
-      "args": ["-m", "mcp_hubspot.server"],
+      "args": [
+        "-m",
+        "mcp_hubspot.server"
+      ],
       "env": {
-        "HUBSPOT_API_KEY": "${user_config.api_key}"
+        "HUBSPOT_ACCESS_TOKEN": "${user_config.access_token}"
       }
     }
   },
   "tools": [
-    { "name": "list_contacts", "description": "List contacts from HubSpot CRM" },
-    { "name": "get_contact", "description": "Get a contact by ID or email" },
-    { "name": "create_contact", "description": "Create a new contact" },
-    { "name": "update_contact", "description": "Update a contact's properties" },
-    { "name": "list_companies", "description": "List companies from HubSpot CRM" },
-    { "name": "get_company", "description": "Get a company by ID" },
-    { "name": "create_company", "description": "Create a new company" },
-    { "name": "update_company", "description": "Update a company's properties" },
-    { "name": "list_deals", "description": "List deals from HubSpot CRM" },
-    { "name": "create_deal", "description": "Create a new deal" }
+    {
+      "name": "list_contacts",
+      "description": "List contacts from HubSpot CRM"
+    },
+    {
+      "name": "get_contact",
+      "description": "Get a contact by ID or email"
+    },
+    {
+      "name": "create_contact",
+      "description": "Create a new contact"
+    },
+    {
+      "name": "update_contact",
+      "description": "Update a contact's properties"
+    },
+    {
+      "name": "list_companies",
+      "description": "List companies from HubSpot CRM"
+    },
+    {
+      "name": "get_company",
+      "description": "Get a company by ID"
+    },
+    {
+      "name": "create_company",
+      "description": "Create a new company"
+    },
+    {
+      "name": "update_company",
+      "description": "Update a company's properties"
+    },
+    {
+      "name": "list_deals",
+      "description": "List deals from HubSpot CRM"
+    },
+    {
+      "name": "create_deal",
+      "description": "Create a new deal"
+    }
   ],
   "_meta": {
     "org.mpaktrust": {

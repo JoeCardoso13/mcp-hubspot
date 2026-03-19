@@ -13,7 +13,7 @@ from mcp_hubspot.api_models import CrmListResponse, CrmObject
 @pytest_asyncio.fixture
 async def mock_client():
     """Create a HubspotClient with mocked session."""
-    client = HubspotClient(api_key="test_key")
+    client = HubspotClient(access_token="test_key")
     client._session = AsyncMock()
     yield client
     await client.close()
@@ -22,26 +22,26 @@ async def mock_client():
 class TestClientInitialization:
     """Test client creation and configuration."""
 
-    def test_init_with_explicit_key(self):
-        client = HubspotClient(api_key="explicit_key")
-        assert client.api_key == "explicit_key"
+    def test_init_with_explicit_token(self):
+        client = HubspotClient(access_token="explicit_token")
+        assert client.access_token == "explicit_token"
 
     def test_init_with_env_var(self):
-        os.environ["HUBSPOT_API_KEY"] = "env_key"
+        os.environ["HUBSPOT_ACCESS_TOKEN"] = "env_token"
         try:
             client = HubspotClient()
-            assert client.api_key == "env_key"
+            assert client.access_token == "env_token"
         finally:
-            del os.environ["HUBSPOT_API_KEY"]
+            del os.environ["HUBSPOT_ACCESS_TOKEN"]
 
-    def test_init_without_key_raises(self):
+    def test_init_without_token_raises(self):
         with patch.dict(os.environ, {}, clear=True):
-            os.environ.pop("HUBSPOT_API_KEY", None)
-            with pytest.raises(ValueError, match="HUBSPOT_API_KEY is required"):
+            os.environ.pop("HUBSPOT_ACCESS_TOKEN", None)
+            with pytest.raises(ValueError, match="HUBSPOT_ACCESS_TOKEN is required"):
                 HubspotClient()
 
     def test_custom_timeout(self):
-        client = HubspotClient(api_key="key", timeout=60.0)
+        client = HubspotClient(access_token="key", timeout=60.0)
         assert client.timeout == 60.0
 
     def test_base_url(self):
@@ -49,7 +49,7 @@ class TestClientInitialization:
 
     @pytest.mark.asyncio
     async def test_context_manager(self):
-        async with HubspotClient(api_key="test") as client:
+        async with HubspotClient(access_token="test") as client:
             assert client._session is not None
         assert client._session is None
 

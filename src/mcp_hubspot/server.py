@@ -36,11 +36,11 @@ def get_client(ctx: Context | None = None) -> HubspotClient:
     """Get or create the API client instance."""
     global _client
     if _client is None:
-        api_key = os.environ.get("HUBSPOT_API_KEY")
-        if not api_key:
-            msg = "HUBSPOT_API_KEY environment variable is required"
+        access_token = os.environ.get("HUBSPOT_ACCESS_TOKEN")
+        if not access_token:
+            msg = "HUBSPOT_ACCESS_TOKEN environment variable is required"
             raise ValueError(msg)
-        _client = HubspotClient(api_key=api_key)
+        _client = HubspotClient(access_token=access_token)
     return _client
 
 

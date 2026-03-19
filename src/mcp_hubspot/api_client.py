@@ -26,12 +26,12 @@ class HubspotClient:
 
     def __init__(
         self,
-        api_key: str | None = None,
+        access_token: str | None = None,
         timeout: float = 30.0,
     ) -> None:
-        self.api_key = api_key or os.environ.get("HUBSPOT_API_KEY")
-        if not self.api_key:
-            raise ValueError("HUBSPOT_API_KEY is required")
+        self.access_token = access_token or os.environ.get("HUBSPOT_ACCESS_TOKEN")
+        if not self.access_token:
+            raise ValueError("HUBSPOT_ACCESS_TOKEN is required")
         self.timeout = timeout
         self._session: aiohttp.ClientSession | None = None
 
@@ -48,7 +48,7 @@ class HubspotClient:
                 "User-Agent": "mcp-server-hubspot/0.1.0",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}",
+                "Authorization": f"Bearer {self.access_token}",
             }
             self._session = aiohttp.ClientSession(
                 headers=headers, timeout=aiohttp.ClientTimeout(total=self.timeout)
@@ -85,6 +85,9 @@ class HubspotClient:
                 kwargs["params"] = params
 
             async with self._session.request(method, url, **kwargs) as response:
+                if response.status == 204:
+                    return {}
+
                 result = await response.json()
 
                 if response.status >= 400:
