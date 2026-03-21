@@ -50,37 +50,65 @@ async def get_server_context() -> dict:
         }
 
 
+def call_llm(client: anthropic.Anthropic, ctx: dict, prompt: str):
+    system = (
+        f"You are an assistant.\n\n"
+        f"## Server Instructions\n{ctx['instructions']}\n\n"
+        f"## Skill Resource\n{ctx['skill']}"
+    )
+    return client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        system=system,
+        messages=[{"role": "user", "content": prompt}],
+        tools=[{"type": "custom", **t} for t in ctx["tools"]],
+    )
+
+
 class TestSkillLLMInvocation:
-    """Test that an LLM reads the skill and makes correct tool choices.
+    """Test that an LLM reads the skill and makes correct tool choices."""
 
-    TODO: Replace with tests specific to your server's tools and skill.
+    @pytest.mark.asyncio
+    async def test_list_contacts_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+        response = call_llm(client, ctx, "Show me all contacts in the CRM")
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "list_contacts"
 
-    Each test should:
-    1. Send a user prompt that maps to a specific tool per the SKILL.md
-    2. Assert the LLM calls the expected tool (not a similar one)
-    """
+    @pytest.mark.asyncio
+    async def test_create_contact_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+        response = call_llm(client, ctx, "Add a new contact named Jane Smith with email jane@example.com")
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "create_contact"
 
-    # @pytest.mark.asyncio
-    # async def test_query_selects_correct_tool(self):
-    #     """When asked to X, the LLM should call tool_name."""
-    #     ctx = await get_server_context()
-    #     client = get_anthropic_client()
-    #
-    #     system = (
-    #         f"You are an assistant.\n\n"
-    #         f"## Server Instructions\n{ctx['instructions']}\n\n"
-    #         f"## Skill Resource\n{ctx['skill']}"
-    #     )
-    #
-    #     response = client.messages.create(
-    #         model="claude-haiku-4-5-20251001",
-    #         max_tokens=1024,
-    #         system=system,
-    #         messages=[{"role": "user", "content": "Your test prompt here"}],
-    #         tools=[{"type": "custom", **t} for t in ctx["tools"]],
-    #     )
-    #
-    #     tool_calls = [b for b in response.content if b.type == "tool_use"]
-    #     assert len(tool_calls) > 0, "LLM did not call any tool"
-    #     assert tool_calls[0].name == "expected_tool_name"
-    pass
+    @pytest.mark.asyncio
+    async def test_list_companies_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+        response = call_llm(client, ctx, "Show me all companies in the CRM")
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "list_companies"
+
+    @pytest.mark.asyncio
+    async def test_create_company_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+        response = call_llm(client, ctx, "Create a new company called Acme Corp")
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "create_company"
+
+    @pytest.mark.asyncio
+    async def test_list_deals_selected(self):
+        ctx = await get_server_context()
+        client = get_anthropic_client()
+        response = call_llm(client, ctx, "Show me the deals in the pipeline")
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        assert len(tool_calls) > 0, "LLM did not call any tool"
+        assert tool_calls[0].name == "list_deals"

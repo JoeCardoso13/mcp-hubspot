@@ -3,7 +3,7 @@
   "name": "io.joecardoso13/hubspot",
   "title": "HubSpot",
   "description": "MCP server for the HubSpot CRM API — manage contacts, companies, and deals",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "websiteUrl": "https://github.com/JoeCardoso13",
   "repository": {
     "url": "https://github.com/JoeCardoso13/mcp-hubspot",
